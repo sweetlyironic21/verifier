@@ -18042,7 +18042,7 @@
       pom.click();
     }
     async function download_csv(job_id){
-        res=await axios.get(`http://127.0.0.1:8000/v0/bulk/${job_id}/result`)
+        res=await axios.get(`https://lionfish-app-zu242.ondigitalocean.app/v0/bulk/${job_id}/result`)
         data=res.data
         downloadBlob(data,"data.csv","data:text/csv;charset=utf-8,")
       }
@@ -18061,13 +18061,13 @@
     async function start_verification_job(emails){
       if(emails.length>200)
         emails=emails.slice(0,200)
-      response=await axios.post("http://127.0.0.1:8000/v0/bulk",{
+      response=await axios.post("https://lionfish-app-zu242.ondigitalocean.app/v0/bulk",{
               "emails": emails
       })
       data=(response.data)
 
       const interval=setInterval(async()=>{
-        res=await axios.get(`http://127.0.0.1:8000/v0/bulk/${data.job_id}`)
+        res=await axios.get(`https://lionfish-app-zu242.ondigitalocean.app/v0/bulk/${data.job_id}`)
         data=res.data
         if (data.job_status=="Completed"){
           set_ui(data)
