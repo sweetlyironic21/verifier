@@ -18041,38 +18041,58 @@
       pom.setAttribute('download', filename);
       pom.click();
     }
-    async function download_csv(job_id){
-        res=await axios.get(`https://lionfish-app-zu242.ondigitalocean.app/v0/bulk/${job_id}/result`)
-        data=res.data
-        downloadBlob(data,"data.csv","data:text/csv;charset=utf-8,")
-      }
-    function set_ui(data){
-      console.log(data)
-      document.querySelector("#result").textContent=`
-        total_invalid:${data.summary.total_invalid},
-        total_risky:${data.summary.total_risky},
-        total_safe:${data.summary.total_safe},
-        total_unknown:${data.summary.total_unknown}
-      `
+    async function download_csv(job_ids){
+      data=""
 
-      download_csv(data.job_id)
+      for(var job_id of job_ids){
+        res=await axios.get(`https://lionfish-app-zu242.ondigitalocean.app/v0/bulk/${job_id}/result`)
+        data+=res.data
+        } 
+        downloadBlob(data,"verified_emails.csv","data:text/csv;charset=utf-8,")
+      }
+    function set_ui(job_ids){
+      console.log(data)
+      // document.querySelector("#result").textContent=`
+      //   total_invalid:${data.summary.total_invalid},
+      //   total_risky:${data.summary.total_risky},
+      //   total_safe:${data.summary.total_safe},
+      //   total_unknown:${data.summary.total_unknown}
+      // `
+
+      download_csv(job_ids)
     }
 
     async function start_verification_job(emails){
-      if(emails.length>200)
-        emails=emails.slice(0,200)
-      response=await axios.post("https://lionfish-app-zu242.ondigitalocean.app/v0/bulk",{
-              "emails": emails
-      })
-      data=(response.data)
-
+      n=200
+      const result = new Array(Math.ceil(emails.length / n)).fill().map(_ => emails.splice(0, n))
+      console.log(result)
+      job_ids=[]
+      for(var emails of result){
+        response=await axios.post("https://lionfish-app-zu242.ondigitalocean.app/v0/bulk",{
+                "emails": emails
+        })
+        data=(response.data)
+        job_ids.push(data.job_id)
+      }
+      console.log(job_ids)
       const interval=setInterval(async()=>{
-        res=await axios.get(`https://lionfish-app-zu242.ondigitalocean.app/v0/bulk/${data.job_id}`)
-        data=res.data
-        if (data.job_status=="Completed"){
-          set_ui(data)
-          clearInterval(interval)
+        const job_status=[]
+        for(var id of job_ids){
+          res=await axios.get(`https://lionfish-app-zu242.ondigitalocean.app/v0/bulk/${id}`)
+          data=res.data
+          job_status.push(data.job_status)
+        } 
+        completed=true
+        for(var status of job_status){
+          if (status!="Completed"){
+            completed=false
+            break
+          }
         }
+        if (completed){
+            set_ui(job_ids)
+            clearInterval(interval)
+          }
       },5000)
     }
 
